@@ -24,7 +24,9 @@
         }
 
         class Player {
-            constructor(offset, velocity, w) {
+            constructor(offset, velocity, w, assigned_div) {
+                this.div = assigned_div;
+
                 this.mapOffsetX = 50;
                 this.mapOffsetY = 50;
                 this.localX = 0;
@@ -59,41 +61,21 @@
                 if (dir == 0) {
                     var off = this.newv(val, 37, 39);
                     var newX = this.GetBounds(off);
-                    if (newX==val)
-                        this.mapOffsetX += (val-off);
+                    if (newX == val)
+                        this.mapOffsetX += (val - off);
                     this.localX = newX;
                 }
                 if (dir == 1) {
                     var off = this.newv(val, 38, 40);
                     var newY = this.GetBounds(off);
-                    if (newY==val)
-                        this.mapOffsetY += (val-off);
+                    if (newY == val)
+                        this.mapOffsetY += (val - off);
                     this.localY = newY;
                 }
             }
 
             Move() {
-
-            }
-        }
-
-        let player;
-        window.onload = function () {
-            var pane = $('#pane'),
-                box = $('#box'),
-                w = (pane.width() - box.width()) / 3,
-                d = {},
-                velocity = 3,
-                offset = w / 3 * 2;
-
-            player = new Player(offset, velocity, w);
-
-
-            $(window).keydown(function (e) { player.d[e.which] = true; });
-            $(window).keyup(function (e) { player.d[e.which] = false; });
-
-            setInterval(function () {
-                box.css({
+                this.div.css({
                     left: function (i, v) {
                         player.AddVelocity(v, 0);
                         return player.localX;
@@ -103,11 +85,28 @@
                         return player.localY;
                     }
                 });
-            }, 10);
+            }
+        }
+
+        let player;
+        window.onload = function () {
+            var pane = $('#pane'),
+                w = (pane.width() - 128) / 3,
+                d = {},
+                velocity = 3,
+                offset = w / 3 * 2;
+
+            player = new Player(offset, velocity, w, $("#box"));
+
+
+            $(window).keydown(function (e) { player.d[e.which] = true; });
+            $(window).keyup(function (e) { player.d[e.which] = false; });
 
             $(function () {
                 setInterval(function () {
                     $('body').css('background-position', player.mapOffsetX + 'px ' + player.mapOffsetY + 'px ');
+                    player.Move();
+
                 }, 10);
             })
         }
