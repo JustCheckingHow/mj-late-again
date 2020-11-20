@@ -11,7 +11,6 @@ const Container = styled('div')(({ theme }) => {
   return {
     position: 'relative',
     height: '100%',
-    width: '50%',
     display: 'grid',
     gridTemplateColumns: `1fr ${theme.sidebarWidth}px`,
     gridTemplateRows: '100%',

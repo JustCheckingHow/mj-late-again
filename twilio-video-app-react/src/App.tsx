@@ -41,7 +41,6 @@ export default function App() {
         <PreJoinScreens />
       ) : (
         <Main>
-          <Map />
           <ReconnectingNotification />
           <MobileTopMenuBar />
           <Room />
