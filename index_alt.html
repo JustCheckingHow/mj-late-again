@@ -24,32 +24,45 @@
                 this.d = {};
                 this.offset = offset;
                 this.velocity = velocity;
-                this.w = w
+                this.w = w;
+                this.mapX = this.globalX;
+                this.mapY = this.globalY;
             }
 
-            newv(v, a, b) {
-                var n = parseInt(v, 10);
+            newv(n, a, b) {
                 if (this.d[a])
                     n -= this.velocity;
                 if (this.d[b])
                     n += this.velocity;
 
-                if (n < this.offset)
+                return n
+            }
+
+            GetBounds(off) {
+                if (off < this.offset) {
                     return this.offset;
-                if (n > this.w + this.offset)
+                }
+                if (off > this.w + this.offset)
                     return this.w + this.offset;
-                return n;
+
+                return off;
             }
 
             AddVelocity(val, dir) {
+                val = parseInt(val, 10);
                 if (dir == 0) {
-                    var newX = this.newv(val, 37, 39);
-                    this.globalX += newX - this.localX;
+                    var off = this.newv(val, 37, 39);
+                    var newX = this.GetBounds(off);
+                    if (newX==val)
+                        this.globalX += (val-off);
                     this.localX = newX;
                 }
                 if (dir == 1) {
-                    var newY = this.newv(val, 38, 40);
-                    this.globaly += newY - this.localY;
+                    // var newY = this.newv(val, 38, 40);
+                    var off = this.newv(val, 38, 40);
+                    var newY = this.GetBounds(off);
+                    if (newY==val)
+                        this.globalY += (val-off);
                     this.localY = newY;
                 }
             }
@@ -86,11 +99,17 @@
                     }
                 });
             }, 10);
+
+            $(function () {
+                setInterval(function () {
+                    $('body').css('background-position', player.globalX + 'px ' + player.globalY + 'px ');
+                }, 10);
+            })
         }
     </script>
 </head>
 
-<body>
+<body background="img/0.jpg">
     <div id="pane" class="my-auto mx-auto">
         <img id="box" src="img/0.jpg"></img>
     </div>
