@@ -15,18 +15,24 @@
 
         var local_x;
         var local_y;
+        class Map {
+            constructor(offset, w) {
+                this.mapOffsetX = 50;
+                this.mapOffsetY = 50;
+            }
+
+        }
+
         class Player {
             constructor(offset, velocity, w) {
-                this.globalX = 50;
-                this.globalY = 50;
+                this.mapOffsetX = 50;
+                this.mapOffsetY = 50;
                 this.localX = 0;
                 this.localY = 0;
                 this.d = {};
                 this.offset = offset;
                 this.velocity = velocity;
                 this.w = w;
-                this.mapX = this.globalX;
-                this.mapY = this.globalY;
             }
 
             newv(n, a, b) {
@@ -54,15 +60,14 @@
                     var off = this.newv(val, 37, 39);
                     var newX = this.GetBounds(off);
                     if (newX==val)
-                        this.globalX += (val-off);
+                        this.mapOffsetX += (val-off);
                     this.localX = newX;
                 }
                 if (dir == 1) {
-                    // var newY = this.newv(val, 38, 40);
                     var off = this.newv(val, 38, 40);
                     var newY = this.GetBounds(off);
                     if (newY==val)
-                        this.globalY += (val-off);
+                        this.mapOffsetY += (val-off);
                     this.localY = newY;
                 }
             }
@@ -102,7 +107,7 @@
 
             $(function () {
                 setInterval(function () {
-                    $('body').css('background-position', player.globalX + 'px ' + player.globalY + 'px ');
+                    $('body').css('background-position', player.mapOffsetX + 'px ' + player.mapOffsetY + 'px ');
                 }, 10);
             })
         }
