@@ -6,9 +6,8 @@ const Container = styled('div')(({ theme }) => {
   return {
     position: 'relative',
     height: '100%',
-    width: '50%',
-    display: 'grid',
-  };
+    background: 'blue',
+   };
 });
 
 export default function Map() {

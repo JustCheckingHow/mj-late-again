@@ -2,6 +2,7 @@ import React from 'react';
 import ParticipantList from '../ParticipantList/ParticipantList';
 import { styled } from '@material-ui/core/styles';
 import MainParticipant from '../MainParticipant/MainParticipant';
+import Map from '../Map/Map';
 
 const Container = styled('div')(({ theme }) => {
   const totalMobileSidebarHeight = `${theme.sidebarMobileHeight +
@@ -24,7 +25,7 @@ const Container = styled('div')(({ theme }) => {
 export default function Room() {
   return (
     <Container>
-      <MainParticipant />
+      <Map />
       <ParticipantList />
     </Container>
   );

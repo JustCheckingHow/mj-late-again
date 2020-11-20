@@ -6,7 +6,6 @@ import MobileTopMenuBar from './components/MobileTopMenuBar/MobileTopMenuBar';
 import PreJoinScreens from './components/PreJoinScreens/PreJoinScreens';
 import ReconnectingNotification from './components/ReconnectingNotification/ReconnectingNotification';
 import Room from './components/Room/Room';
-import Map from './components/Map/Map';
 
 import useHeight from './hooks/useHeight/useHeight';
 import useRoomState from './hooks/useRoomState/useRoomState';
@@ -24,6 +23,8 @@ const Main = styled('main')(({ theme }: { theme: Theme }) => ({
     paddingBottom: `${theme.mobileFooterHeight + theme.mobileTopBarHeight}px`, // Leave some space for the mobile header and footer
   },
 }));
+
+
 
 export default function App() {
   const roomState = useRoomState();
