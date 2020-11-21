@@ -224,7 +224,7 @@ function setupParticipantContainer(participant, room) {
   const { identity, sid } = participant;
 
   // Add a container for the Participant's media.
-  const $container = $(`<div class="participant" data-identity="${identity}" id="${sid}">
+  const $container = $(`<div class="participant" data-identity="${identity}" id="${sid}" style="outline: 4px solid ${userNameToColor(identity)}">
     <audio autoplay ${participant === room.localParticipant ? 'muted' : ''} style="opacity: 0"></audio>
     <video autoplay muted playsinline style="opacity: 0"></video>
   </div>`);
@@ -380,6 +380,44 @@ function trackPublished(publication, participant) {
   publication.on('unsubscribed', track => {
     detachTrack(track, participant);
   });
+}
+
+function userNameToColor(user) {
+
+  return HSLToRGB((xmur3(user)() % 100)/100, 0.7, 0.7)
+}
+function xmur3(str) {
+    for(var i = 0, h = 1779033703 ^ str.length; i < str.length; i++)
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353),
+        h = h << 13 | h >>> 19;
+    return function() {
+        h = Math.imul(h ^ h >>> 16, 2246822507);
+        h = Math.imul(h ^ h >>> 13, 3266489909);
+        return (h ^= h >>> 16) >>> 0;
+    }
+}
+
+
+function HSLToRGB(h,s,v) {
+
+  var r, g, b, i, f, p, q, t;
+  if (arguments.length === 1) {
+      s = h.s, v = h.v, h = h.h;
+  }
+  i = Math.floor(h * 6);
+  f = h * 6 - i;
+  p = v * (1 - s);
+  q = v * (1 - f * s);
+  t = v * (1 - (1 - f) * s);
+  switch (i % 6) {
+      case 0: r = v, g = t, b = p; break;
+      case 1: r = q, g = v, b = p; break;
+      case 2: r = p, g = v, b = t; break;
+      case 3: r = p, g = q, b = v; break;
+      case 4: r = t, g = p, b = v; break;
+      case 5: r = v, g = p, b = q; break;
+  }
+  return "rgb(" + Math.round(r * 255) + "," + Math.round(g * 255) + "," + Math.round(b * 255) + ")";
 }
 
 /**
