@@ -24,8 +24,6 @@ const Main = styled('main')(({ theme }: { theme: Theme }) => ({
   },
 }));
 
-
-
 export default function App() {
   const roomState = useRoomState();
 

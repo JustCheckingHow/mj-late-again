@@ -1,7 +1,7 @@
 import React from 'react';
 import ParticipantList from '../ParticipantList/ParticipantList';
 import { styled } from '@material-ui/core/styles';
-import MainParticipant from '../MainParticipant/MainParticipant';
+// import MainParticipant from '../MainParticipant/MainParticipant';
 import Map from '../Map/Map';
 
 const Container = styled('div')(({ theme }) => {
