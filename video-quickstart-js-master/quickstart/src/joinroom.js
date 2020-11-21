@@ -65,9 +65,9 @@ class Map {
 
   ReceiveUpdate(sid, posX, posY)
   {
-    // this.participants[0].globalPos[0] = posX;
-    // this.participants[0].globalPos[1] = posY;
-    console.log(posX);
+    this.participants[0].globalPos[0] = posX;
+    this.participants[0].globalPos[1] = posY;
+    // console.log(posX);
   }
 
   Update() {
@@ -80,13 +80,14 @@ class Map {
 
 class Player {
   constructor(map, assigned_div) {
-    var raster = new paper.Raster("img/0.jpg");
-    raster.position = new paper.Point(300, 300);
-    raster.rescale(128, 128);
+    // var raster = new paper.Raster("img/0.jpg");
+    // raster.position = new paper.Point(300, 300);
+    // raster.rescale(128, 128);
 
     var path = new paper.Path.Rectangle(150, 150, 128, 128);
     var group = new paper.Group();
-    group.addChild(raster);
+    // group.addChild(raster);
+    path.fillColor = "#FAABDA";
     group.addChild(path);
     group.view.draw();
 
@@ -153,14 +154,14 @@ class Participant {
     console.log("Create participant");
     this.globalPos = [posX, posY];
 
-    var raster = new paper.Raster("img/0.jpg");
-    raster.position = new paper.Point(posX, posY);
-    raster.rescale(128, 128);
+    // var raster = new paper.Raster("img/0.jpg");
+    // raster.position = new paper.Point(posX, posY);
+    // raster.rescale(128, 128);
 
     var path = new paper.Path.Rectangle(posX, posY, 128, 128);
     var group = new paper.Group();
-    group.addChild(raster);
-    // path.fillColor = "#FABAFA"
+    // group.addChild(raster);
+    path.fillColor = "#FABAFA"
     group.addChild(path);
     group.view.draw();
     this.repr = group;
