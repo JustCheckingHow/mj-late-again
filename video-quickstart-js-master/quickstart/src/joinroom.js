@@ -60,8 +60,8 @@ function setActiveParticipant(participant) {
  * @param room - the Room which contains the current active Participant
  */
 function setCurrentActiveParticipant(room) {
-  const { dominantSpeaker, localParticipant } = room;
-  setActiveParticipant(dominantSpeaker || localParticipant);
+  const { localParticipant } = room;
+  setActiveParticipant(localParticipant);
 }
 
 /**
@@ -79,22 +79,22 @@ function setupParticipantContainer(participant, room) {
   </div>`);
 
   // Toggle the pinning of the active Participant's video.
-  $container.on('click', () => {
-    if (activeParticipant === participant && isActiveParticipantPinned) {
-      // Unpin the RemoteParticipant and update the current active Participant.
-      setVideoPriority(participant, null);
-      isActiveParticipantPinned = false;
-      setCurrentActiveParticipant(room);
-    } else {
-      // Pin the RemoteParticipant as the active Participant.
-      if (isActiveParticipantPinned) {
-        setVideoPriority(activeParticipant, null);
-      }
-      setVideoPriority(participant, 'high');
-      isActiveParticipantPinned = true;
-      setActiveParticipant(participant);
-    }
-  });
+  // $container.on('click', () => {
+  //   if (activeParticipant === participant && isActiveParticipantPinned) {
+  //     // Unpin the RemoteParticipant and update the current active Participant.
+  //     setVideoPriority(participant, null);
+  //     isActiveParticipantPinned = false;
+  //     setCurrentActiveParticipant(room);
+  //   } else {
+  //     // Pin the RemoteParticipant as the active Participant.
+  //     if (isActiveParticipantPinned) {
+  //       setVideoPriority(activeParticipant, null);
+  //     }
+  //     setVideoPriority(participant, 'high');
+  //     isActiveParticipantPinned = true;
+  //     setActiveParticipant(participant);
+  //   }
+  // });
 
   // Add the Participant's container to the DOM.
   $participants.append($container);
@@ -128,6 +128,16 @@ function attachTrack(track, participant) {
   if (track.kind === 'data') {
     track.on('message', function(message) {
         console.log([participant.identity, message])
+        const position = JSON.parse(message)
+        let localAudioTrack = Array.from(room.localParticipant.audioTracks.values())[0].track;
+
+        if (position.x < 400) {
+          detachTrack(localAudioTrack, participant)
+          $("#" + participant.sid).hide() 
+        }else {
+          attachTrack(localAudioTrack, participant)
+          $("#" + participant.sid).show()
+        }
     })
   }else {
       track.attach($media.get(0));
@@ -225,12 +235,19 @@ function trackPublished(publication, participant) {
  * @param token - the AccessToken used to join a Room
  * @param connectOptions - the ConnectOptions used to join a Room
  */
-async function joinRoom(token, connectOptions) {
+async function joinRoom(token, connectOptions, localDataTrack) {
   // Join to the Room with the given AccessToken and ConnectOptions.
   const room = await connect(token, connectOptions);
 
   // Save the LocalVideoTrack.
   let localVideoTrack = Array.from(room.localParticipant.videoTracks.values())[0].track;
+
+  window.addEventListener('mousemove', function(e) {
+    localDataTrack.send(JSON.stringify({
+      x: e.clientX,
+      y: e.clientY
+    }));
+  });
 
   // Make the Room available in the JavaScript console for debugging.
   window.room = room;
