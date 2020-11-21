@@ -15,26 +15,56 @@
 
         var local_x;
         var local_y;
+        let player, map;
+
         class Map {
-            constructor(offset, w) {
-                this.mapOffsetX = 50;
-                this.mapOffsetY = 50;
+            constructor(offset, w, body, participants) {
+                this.body = body;
+                // this.mapOffsetX = 50;
+                // this.mapOffsetY = 50;
+                this.offset = [50, 50];
+                this.boundsOffset = offset;
+                this.w = w;
+                this.participants = participants;
             }
 
+            GetBounds(off) {
+                if (off < this.boundsOffset) {
+                    return this.boundsOffset;
+                }
+                if (off > this.w + this.boundsOffset)
+                    return this.w + this.boundsOffset;
+
+                return off;
+            }
+
+            AddOffset(val, axis) {
+                this.offset[axis] += val;
+            }
+
+            Update() {
+                this.body.css('background-position', this.offset[0] + 'px ' + this.offset[1] + 'px ');
+                var partip = this.participants;
+                this.participants.div.css({
+                    left: function (i, v) {
+                        return map.offset[0] + partip.globalPos[0];
+                    },
+                    top: function (i, v) {
+                        return map.offset[1] + partip.globalPos[1];
+                    }
+                });
+            }
         }
 
         class Player {
-            constructor(offset, velocity, w, assigned_div) {
+            constructor(map, assigned_div) {
                 this.div = assigned_div;
+                this.map = map;
 
-                this.mapOffsetX = 50;
-                this.mapOffsetY = 50;
                 this.localX = 0;
                 this.localY = 0;
                 this.d = {};
-                this.offset = offset;
-                this.velocity = velocity;
-                this.w = w;
+                this.velocity = 5;
             }
 
             newv(n, a, b) {
@@ -46,30 +76,22 @@
                 return n
             }
 
-            GetBounds(off) {
-                if (off < this.offset) {
-                    return this.offset;
-                }
-                if (off > this.w + this.offset)
-                    return this.w + this.offset;
-
-                return off;
-            }
-
             AddVelocity(val, dir) {
                 val = parseInt(val, 10);
                 if (dir == 0) {
                     var off = this.newv(val, 37, 39);
-                    var newX = this.GetBounds(off);
+                    var newX = this.map.GetBounds(off);
                     if (newX == val)
-                        this.mapOffsetX += (val - off);
+                        this.map.AddOffset(val - off, 0);
+
                     this.localX = newX;
                 }
                 if (dir == 1) {
                     var off = this.newv(val, 38, 40);
-                    var newY = this.GetBounds(off);
+                    var newY = this.map.GetBounds(off);
                     if (newY == val)
-                        this.mapOffsetY += (val - off);
+                        this.map.AddOffset(val - off, 1);
+
                     this.localY = newY;
                 }
             }
@@ -88,23 +110,30 @@
             }
         }
 
-        let player;
+        class Participant {
+            constructor(posX, posY, div) {
+                this.globalPos = [posX, posY];
+                this.div = div;
+            }
+        }
+
         window.onload = function () {
             var pane = $('#pane'),
                 w = (pane.width() - 128) / 3,
                 d = {},
                 velocity = 3,
-                offset = w / 3 * 2;
+                offset = w / 3;
 
-            player = new Player(offset, velocity, w, $("#box"));
-
+            partip = new Participant(1200, 700, $("#box2"));
+            map = new Map(offset, w, $('body'), partip);
+            player = new Player(map, $("#box"));
 
             $(window).keydown(function (e) { player.d[e.which] = true; });
             $(window).keyup(function (e) { player.d[e.which] = false; });
 
             $(function () {
                 setInterval(function () {
-                    $('body').css('background-position', player.mapOffsetX + 'px ' + player.mapOffsetY + 'px ');
+                    map.Update();
                     player.Move();
 
                 }, 10);
@@ -113,9 +142,10 @@
     </script>
 </head>
 
-<body background="img/0.jpg">
+<body background="floor.jpg">
     <div id="pane" class="my-auto mx-auto">
         <img id="box" src="img/0.jpg"></img>
+        <img id="box2" src="img/0.jpg"></img>
     </div>
 </body>
 
