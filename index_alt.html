@@ -43,26 +43,22 @@
             }
 
             Update() {
-                // this.body.css('background-position', this.offset[0] + 'px ' + this.offset[1] + 'px ');
-                var offx = this.offset[0];
-                var offy = this.offset[1];
-                this.body.css({
-                    left: function (i, v) {
-                        return offx;
-                    },
-                    top: function (i, v) {
-                        return offy;
-                    }
-                });
+                this.body.css('background-position', this.offset[0] + 'px ' + this.offset[1] + 'px ');
+                // var offx = this.offset[0];
+                // var offy = this.offset[1];
+                // this.body.css({
+                //     left: function (i, v) {
+                //         return offx;
+                //     },
+                //     top: function (i, v) {
+                //         return offy;
+                //     }
+                // });
 
                 var partip = this.participants;
                 this.participants.div.css({
-                    left: function (i, v) {
-                        return map.offset[0] + partip.globalPos[0];
-                    },
-                    top: function (i, v) {
-                        return map.offset[1] + partip.globalPos[1];
-                    }
+                    left: map.offset[0] + partip.globalPos[0],
+                    top: map.offset[1] + partip.globalPos[1]
                 });
             }
         }
@@ -108,15 +104,12 @@
             }
 
             Move() {
+                player.AddVelocity(player.localX, 0);
+                player.AddVelocity(player.localY, 1);
+
                 this.div.css({
-                    left: function (i, v) {
-                        player.AddVelocity(v, 0);
-                        return player.localX;
-                    },
-                    top: function (i, v) {
-                        player.AddVelocity(v, 1);
-                        return player.localY;
-                    }
+                    left: player.localX,
+                    top: player.localY
                 });
             }
         }
@@ -153,8 +146,8 @@
     </script>
 </head>
 
-<body background="floor.jpg">
-    <div id="map" background="floor.jpg">
+<body>
+    <div id="map" style = "background-image: url('floor.jpg'); background-position: 200px 200px;">
     </div>
 
     <div id="pane" class="my-auto mx-auto">
