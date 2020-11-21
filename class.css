@@ -14,3 +14,9 @@
     width:128px; height:128px;          
     background-color:black;
 }
+
+#box2 {
+    position:absolute; top:140px; left:140px;
+    width:128px; height:128px;          
+    background-color:black;
+}
