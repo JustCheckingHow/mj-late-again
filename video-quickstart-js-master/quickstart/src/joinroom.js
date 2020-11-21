@@ -79,15 +79,16 @@ class Map {
 }
 
 class Player {
-  constructor(map, assigned_div) {
+  constructor(map, identity) {
     // var raster = new paper.Raster("img/0.jpg");
     // raster.position = new paper.Point(300, 300);
     // raster.rescale(128, 128);
 
-    var path = new paper.Path.Rectangle(150, 150, 128, 128);
+    var path = new paper.Path.Circle( new paper.Point(150, 150), 40);
     var group = new paper.Group();
     // group.addChild(raster);
-    path.fillColor = "#FAABDA";
+    const color = stringToColor(identity)
+    path.fillColor = new paper.Color(color.r, color.g, color.b)
     group.addChild(path);
     group.view.draw();
 
@@ -171,14 +172,14 @@ class Participant {
 
 // var w = (1800 - 128) / 3,
 //   offset = w / 3 * 2;
-function setupCanvas() {
+function setupCanvas(room) {
   var canvas = document.getElementById('canvas');
   var w = (canvas.width - 128) * 2;
   var offset = canvas.width;
 
   paper.setup(canvas);
   map = new Map(offset, w, true);
-  player = new Player(map, "asdf");
+  player = new Player(map, room.localParticipant.identity);
 
   $(window).keydown(function (e) { player.d[e.which] = true; });
   $(window).keyup(function (e) { player.d[e.which] = false; });
@@ -464,7 +465,6 @@ function RGBToString(color) {
 async function joinRoom(token, connectOptions, localDataTrack) {
   // Join to the Room with the given AccessToken and ConnectOptions.
   window.localDataTrack = localDataTrack;
-  setupCanvas();
 
   const room = await connect(token, connectOptions);
 
@@ -480,6 +480,7 @@ async function joinRoom(token, connectOptions, localDataTrack) {
 
   // Make the Room available in the JavaScript console for debugging.
   window.room = room;
+  setupCanvas(room);
 
   // Handle the LocalParticipant's media.
   participantConnected(room.localParticipant, room);
