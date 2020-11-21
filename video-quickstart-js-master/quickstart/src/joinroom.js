@@ -130,12 +130,13 @@ function attachTrack(track, participant) {
         console.log([participant.identity, message])
         const position = JSON.parse(message)
         let localAudioTrack = Array.from(room.localParticipant.audioTracks.values())[0].track;
-
+        const $media = $(`div#${participant.sid} > ${localAudioTrack.kind}`, $participants);
+        const channel = $media.get(0);
         if (position.x < 400) {
-          detachTrack(localAudioTrack, participant)
+          channel.muted = true;
           $("#" + participant.sid).hide() 
         }else {
-          attachTrack(localAudioTrack, participant)
+          channel.muted = false;
           $("#" + participant.sid).show()
         }
     })
