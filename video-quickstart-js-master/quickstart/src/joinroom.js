@@ -33,7 +33,7 @@ class Map {
     this.w = [parseInt(w), parseInt(w * 2 / 3)];
     this.participants = [];
 
-    this.body = new paper.Raster("img/floor.jpg");
+    this.body = new paper.Raster("img/blueprint-paper.jpg");
     this.body.position = new paper.Point(this.offset[0], this.offset[1]);
     this.body.view.draw();
 
