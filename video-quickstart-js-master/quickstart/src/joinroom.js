@@ -29,7 +29,7 @@ let player, map, bounds;
 class BoardMap {
   constructor(offset, w, draw_bbox) {
     this.offset = [50, 50];
-    this.boundsOffset = [parseInt(offset), parseInt(offset)];
+    this.boundsOffset = [parseInt(offset)*3/2, parseInt(offset)];
     this.w = [parseInt(w), parseInt(w * 2 / 3)];
     this.participants = new Map();
 
@@ -77,16 +77,30 @@ class Player {
   constructor(map, identity) {
     this.identity = identity;
 
-    var group = new paper.Group();
-    var identityText = new paper.PointText();
-    identityText.content = identity;
-
-    var path = new paper.Path.Circle(new paper.Point(150, 150), 40);
     const color = stringToColor(identity)
+    
+    var group = new paper.Group();
+    var path = new paper.Path.Circle(new paper.Point(0, 0), 40);
+    path.strokeColor = 'black';
+    path.strokeWidth = 5;
     path.fillColor = new paper.Color(color.r, color.g, color.b)
+    
+    var identityText = new paper.PointText(0, 80);
+    identityText.content = identity;
+    identityText.style = {
+      fontWeight: 'bold',
+      fontSize: 20,
+      fillColor: '#F2F2F2',
+      justification: 'center',
+    }
+    var rect = new paper.Path.Rectangle(identityText.bounds);
+    rect.fillColor = 'black';
+    rect.fillColor.alpha = 0.6;
+    identityText.insertAbove(rect);
 
-    group.addChild(identityText);
+    group.addChild(rect);
     group.addChild(path);
+    group.addChild(identityText);
     group.view.draw();
 
     this.repr = group;
@@ -153,14 +167,29 @@ class Participant {
     this.globalPos = [posX, posY];
     this.name = name;
 
-    var identityText = new paper.PointText();
-    identityText.content = name;
-
-    var path = new paper.Path.Circle(new paper.Point(posX, posY), 40);
     var group = new paper.Group();
+
+    var identityText = new paper.PointText(0, 80);
+    identityText.content = name;
+    identityText.style = {
+      fontWeight: 'bold',
+      fontSize: 20,
+      fillColor: '#F2F2F2',
+      justification: 'center',
+    }
+    var rect = new paper.Path.Rectangle(identityText.bounds);
+    rect.fillColor = 'black';
+    rect.fillColor.alpha = 0.6;
+    identityText.insertAbove(rect);
+
+    var path = new paper.Path.Circle(new paper.Point(0, 0), 40);
     const color = stringToColor(name)
-    path.fillColor = new paper.Color(color.r, color.g, color.b)
+    path.fillColor = new paper.Color(color.r, color.g, color.b);
+    path.strokeColor = 'black';
+    path.strokeWidth = 5;
+
     group.addChild(path);
+    group.addChild(rect);
     group.addChild(identityText);
     group.view.draw();
 
@@ -187,6 +216,7 @@ function setupCanvas(room) {
   // map.AddParticipant(new Participant(800, 600));
 
   window.map = map;
+  window.player = player;
 
   function onFrame(event) {
     if (event.count % 2 == 0) {
