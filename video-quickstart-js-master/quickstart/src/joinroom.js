@@ -36,6 +36,8 @@ class BoardMap {
     this.body = new paper.Raster("img/blueprint-paper.jpg");
     this.body.position = new paper.Point(this.offset[0], this.offset[1]);
     this.body.view.draw();
+
+    this.spawnLocation = [-100, -100];
   }
 
   GetBounds(off, axis) {
@@ -49,8 +51,8 @@ class BoardMap {
   }
 
   AddParticipant(name) {
-    if (typeof name != "undefined") {
-      var partip = new Participant(50, 50, name);
+    if (name != room.localParticipant.identity) {
+      var partip = new Participant(this.spawnLocation[0], this.spawnLocation[1], name);
       this.participants.set(name, partip);
       this.body.sendToBack();
     }
@@ -108,8 +110,8 @@ class Player {
 
     this.localX = 0;
     this.localY = 0;
-    this.globalX = 0;
-    this.globalY = 0;
+    this.globalX = this.map.spawnLocation[0];
+    this.globalY = this.map.spawnLocation[1];
 
     this.d = {};
     this.velocity = 10;
