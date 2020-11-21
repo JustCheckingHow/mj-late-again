@@ -43,7 +43,18 @@
             }
 
             Update() {
-                this.body.css('background-position', this.offset[0] + 'px ' + this.offset[1] + 'px ');
+                // this.body.css('background-position', this.offset[0] + 'px ' + this.offset[1] + 'px ');
+                var offx = this.offset[0];
+                var offy = this.offset[1];
+                this.body.css({
+                    left: function (i, v) {
+                        return offx;
+                    },
+                    top: function (i, v) {
+                        return offy;
+                    }
+                });
+
                 var partip = this.participants;
                 this.participants.div.css({
                     left: function (i, v) {
@@ -125,7 +136,7 @@
                 offset = w / 3;
 
             partip = new Participant(1200, 700, $("#box2"));
-            map = new Map(offset, w, $('body'), partip);
+            map = new Map(offset, w, $('#map'), partip);
             player = new Player(map, $("#box"));
 
             $(window).keydown(function (e) { player.d[e.which] = true; });
@@ -143,6 +154,9 @@
 </head>
 
 <body background="floor.jpg">
+    <div id="map" background="floor.jpg">
+    </div>
+
     <div id="pane" class="my-auto mx-auto">
         <img id="box" src="img/0.jpg"></img>
         <img id="box2" src="img/0.jpg"></img>
