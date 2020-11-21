@@ -84,16 +84,17 @@ class BoardMap {
 }
 
 class Player {
-  constructor(map, assigned_div, name) {
+  constructor(map, identity) {
     // var raster = new paper.Raster("img/0.jpg");
     // raster.position = new paper.Point(300, 300);
     // raster.rescale(128, 128);
     this.name = name;
 
-    var path = new paper.Path.Rectangle(150, 150, 128, 128);
+    var path = new paper.Path.Circle( new paper.Point(150, 150), 40);
     var group = new paper.Group();
     // group.addChild(raster);
-    path.fillColor = "#FAABDA";
+    const color = stringToColor(identity)
+    path.fillColor = new paper.Color(color.r, color.g, color.b)
     group.addChild(path);
     group.view.draw();
 
@@ -166,10 +167,11 @@ class Participant {
     // raster.position = new paper.Point(posX, posY);
     // raster.rescale(128, 128);
 
-    var path = new paper.Path.Rectangle(posX, posY, 128, 128);
+    var path = new paper.Path.Circle( new paper.Point(posX, posY), 40);
     var group = new paper.Group();
     // group.addChild(raster);
-    path.fillColor = "#FABAFA"
+    const color = stringToColor(identity)
+    path.fillColor = new paper.Color(color.r, color.g, color.b)
     group.addChild(path);
     group.view.draw();
     this.repr = group;
@@ -178,14 +180,14 @@ class Participant {
 
 // var w = (1800 - 128) / 3,
 //   offset = w / 3 * 2;
-function setupCanvas() {
+function setupCanvas(room) {
   var canvas = document.getElementById('canvas');
   var w = (canvas.width - 128) * 2;
   var offset = canvas.width;
 
   paper.setup(canvas);
   map = new BoardMap(offset, w, true);
-  player = new Player(map, "asdf");
+  player = new Player(map, room.localParticipant.identity);
 
   $(window).keydown(function (e) { player.d[e.which] = true; });
   $(window).keyup(function (e) { player.d[e.which] = false; });
@@ -259,7 +261,7 @@ function setupParticipantContainer(participant, room) {
   const { identity, sid } = participant;
 
   // Add a container for the Participant's media.
-  const $container = $(`<div class="participant" data-identity="${identity}" id="${sid}">
+  const $container = $(`<div class="participant" data-identity="${identity}" id="${sid}" style="outline: 4px solid ${RGBToString(stringToColor(identity))}">
     <audio autoplay ${participant === room.localParticipant ? 'muted' : ''} style="opacity: 0"></audio>
     <video autoplay muted playsinline style="opacity: 0"></video>
   </div>`);
@@ -422,6 +424,50 @@ function trackPublished(publication, participant) {
   });
 }
 
+function stringToColor(user) {
+
+  return HSLToRGB((xmur3(user)() % 100)/100, 0.7, 0.7)
+}
+function xmur3(str) {
+    for(var i = 0, h = 1779033703 ^ str.length; i < str.length; i++)
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353),
+        h = h << 13 | h >>> 19;
+    return function() {
+        h = Math.imul(h ^ h >>> 16, 2246822507);
+        h = Math.imul(h ^ h >>> 13, 3266489909);
+        return (h ^= h >>> 16) >>> 0;
+    }
+}
+
+
+function HSLToRGB(h,s,v) {
+
+  var r, g, b, i, f, p, q, t;
+  if (arguments.length === 1) {
+      s = h.s, v = h.v, h = h.h;
+  }
+  i = Math.floor(h * 6);
+  f = h * 6 - i;
+  p = v * (1 - s);
+  q = v * (1 - f * s);
+  t = v * (1 - (1 - f) * s);
+  switch (i % 6) {
+      case 0: r = v, g = t, b = p; break;
+      case 1: r = q, g = v, b = p; break;
+      case 2: r = p, g = v, b = t; break;
+      case 3: r = p, g = q, b = v; break;
+      case 4: r = t, g = p, b = v; break;
+      case 5: r = v, g = p, b = q; break;
+  }
+  return {r, g, b}
+}
+
+function RGBToString(color) {
+  return "rgb(" + Math.round(color.r * 255) + "," + Math.round(color.g * 255) + "," + Math.round(color.b * 255) + ")";
+}
+
+
+
 /**
  * Join a Room.
  * @param token - the AccessToken used to join a Room
@@ -430,7 +476,6 @@ function trackPublished(publication, participant) {
 async function joinRoom(token, connectOptions, localDataTrack) {
   // Join to the Room with the given AccessToken and ConnectOptions.
   window.localDataTrack = localDataTrack;
-  setupCanvas();
 
   const room = await connect(token, connectOptions);
 
@@ -446,6 +491,7 @@ async function joinRoom(token, connectOptions, localDataTrack) {
 
   // Make the Room available in the JavaScript console for debugging.
   window.room = room;
+  setupCanvas(room);
 
   // Handle the LocalParticipant's media.
   participantConnected(room.localParticipant, room);
