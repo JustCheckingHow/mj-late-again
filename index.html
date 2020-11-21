@@ -4,182 +4,98 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.1.3/pixi.min.js"></script>
     <link rel="stylesheet" href="class.css">
     <script>
-        function drawPlayer() {
-            // let graphics = PIXI.Sprite.from('img/cat.png');
-            var graphics = new PIXI.Graphics();
-            graphics.interactive = true;
-            graphics.beginFill(0xFABAF0);
-            graphics.drawCircle(0, 0, 60);
-            graphics.beginHole();
-            graphics.drawCircle(0, 0, 60 - 2);
-            graphics.endHole();
-            graphics.endFill();
-            graphics.x = 0;
-            graphics.y = 0;
-
-            graphics.position.x = 100;
-            graphics.position.y = 100;
-            graphics.vx = 0;
-            graphics.vy = 0;
-
-            return graphics;
-        }
-
-        let cat, state, app;
-
         window.onload = function () {
-            app = new PIXI.Application();
-            // var renderer = PIXI.autoDetectRenderer(800, 600, { antialias: true });
-            var renderer = app.renderer;
-            document.body.appendChild(renderer.view);
+            var img = new Image();
 
-            var stage = new PIXI.Container();
-            stage.interactive = true;
+            // User Variables - customize these to change the image being scrolled, its
+            // direction, and the speed.
 
-            function setup() { 
-                
-                // let cat = new PIXI.Sprite(PIXI.loader.resources["img/0.jpg"].texture);
-                // stage.addChild(cat);
-                cat = drawPlayer();
-                stage.addChild(cat);
+            img.src = 'floor.jpg';
+            var CanvasXSize = 800;
+            var CanvasYSize = 200;
+            var speed = 30; // lower is faster
+            var scale = 1.05;
+            var y = -4.5; // vertical offset
 
-                let left = keyboard("ArrowLeft"),
-                    up = keyboard("ArrowUp"),
-                    right = keyboard("ArrowRight"),
-                    down = keyboard("ArrowDown");
-                //Left arrow key `press` method
-                left.press = () => {
-                    //Change the cat's velocity when the key is pressed
-                    cat.vx = -5;
-                    cat.vy = 0;
-                };
+            // Main program
 
-                //Left arrow key `release` method
-                left.release = () => {
-                    //If the left arrow has been released, and the right arrow isn't down,
-                    //and the cat isn't moving vertically:
-                    //Stop the cat
-                    if (!right.isDown && cat.vy === 0) {
-                        cat.vx = 0;
-                    }
-                };
+            var dx = 0.75;
+            var imgW;
+            var imgH;
+            var x = 0;
+            var clearX;
+            var clearY;
+            var ctx;
 
-                //Up
-                up.press = () => {
-                    cat.vy = -5;
-                    cat.vx = 0;
-                };
-                up.release = () => {
-                    if (!down.isDown && cat.vx === 0) {
-                        cat.vy = 0;
-                    }
-                };
+            img.onload = function () {
+                imgW = img.width * scale;
+                imgH = img.height * scale;
 
-                //Right
-                right.press = () => {
-                    cat.vx = 5;
-                    cat.vy = 0;
-                };
-                right.release = () => {
-                    if (!left.isDown && cat.vy === 0) {
-                        cat.vx = 0;
-                    }
-                };
-
-                //Down
-                down.press = () => {
-                    cat.vy = 5;
-                    cat.vx = 0;
-                };
-                down.release = () => {
-                    if (!up.isDown && cat.vx === 0) {
-                        cat.vy = 0;
-                    }
-                };
-
-                //Set the game state
-                state = play;
-
-                //Start the game loop 
-                app.ticker.add(delta => gameLoop(delta));
-            }
-            function gameLoop(delta) {
-                play(delta);
-            }
-
-            function play(delta) {
-                cat.x += cat.vx;
-                cat.y += cat.vy
-            }
-
-            function resize() {
-                // Resize the renderer
-                renderer.resize(window.innerWidth, window.innerHeight);
-            }
-            function animate() {
-                // resize();
-                requestAnimationFrame(animate);
-                renderer.render(stage);
-            }
-
-            resize();
-            setup();
-            animate();
-
-        }
-    </script>
-    <script>
-        function keyboard(value) {
-            let key = {};
-            key.value = value;
-            key.isDown = false;
-            key.isUp = true;
-            key.press = undefined;
-            key.release = undefined;
-            //The `downHandler`
-            key.downHandler = event => {
-                if (event.key === key.value) {
-                    if (key.isUp && key.press) key.press();
-                    key.isDown = true;
-                    key.isUp = false;
-                    event.preventDefault();
+                if (imgW > CanvasXSize) {
+                    // image larger than canvas
+                    x = CanvasXSize - imgW;
                 }
-            };
-
-            //The `upHandler`
-            key.upHandler = event => {
-                if (event.key === key.value) {
-                    if (key.isDown && key.release) key.release();
-                    key.isDown = false;
-                    key.isUp = true;
-                    event.preventDefault();
+                if (imgW > CanvasXSize) {
+                    // image width larger than canvas
+                    clearX = imgW;
+                } else {
+                    clearX = CanvasXSize;
                 }
-            };
+                if (imgH > CanvasYSize) {
+                    // image height larger than canvas
+                    clearY = imgH;
+                } else {
+                    clearY = CanvasYSize;
+                }
 
-            //Attach event listeners
-            const downListener = key.downHandler.bind(key);
-            const upListener = key.upHandler.bind(key);
+                // get canvas context
+                ctx = document.getElementById('canvas').getContext('2d');
 
-            window.addEventListener(
-                "keydown", downListener, false
-            );
-            window.addEventListener(
-                "keyup", upListener, false
-            );
+                // set refresh rate
+                return setInterval(draw, speed);
+            }
 
-            // Detach event listeners
-            key.unsubscribe = () => {
-                window.removeEventListener("keydown", downListener);
-                window.removeEventListener("keyup", upListener);
-            };
+            function draw() {
+                ctx.clearRect(0, 0, clearX, clearY); // clear the canvas
 
-            return key;
+                // if image is <= Canvas Size
+                if (imgW <= CanvasXSize) {
+                    // reset, start from beginning
+                    if (x > CanvasXSize) {
+                        x = -imgW + x;
+                    }
+                    // draw additional image1
+                    if (x > 0) {
+                        ctx.drawImage(img, -imgW + x, y, imgW, imgH);
+                    }
+                    // draw additional image2
+                    if (x - imgW > 0) {
+                        ctx.drawImage(img, -imgW * 2 + x, y, imgW, imgH);
+                    }
+                }
+
+                // image is > Canvas Size
+                else {
+                    // reset, start from beginning
+                    if (x > (CanvasXSize)) {
+                        x = CanvasXSize - imgW;
+                    }
+                    // draw aditional image
+                    if (x > (CanvasXSize - imgW)) {
+                        ctx.drawImage(img, x - imgW + 1, y, imgW, imgH);
+                    }
+                }
+                // draw image
+                ctx.drawImage(img, x, y, imgW, imgH);
+                // amount to move
+                x += dx;
+            }
         }
     </script>
 </head>
 
 <body>
-
+    <canvas id='canvas'></canvas>
 </body>
 
 </html>
