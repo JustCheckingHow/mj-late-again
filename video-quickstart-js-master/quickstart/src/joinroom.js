@@ -346,10 +346,20 @@ function attachTrack(track, participant) {
     track.on('message', function (message) {
       console.log([participant.identity, message])
       const position = JSON.parse(message)
+
+      const x = window.player.globalX
+      const y = window.player.globalY
+
       let localAudioTrack = Array.from(room.localParticipant.audioTracks.values())[0].track;
       const $media = $(`div#${participant.sid} > ${localAudioTrack.kind}`, $participants);
       const channel = $media.get(0);
-      if (position.x < 400) {
+
+      const difx = x - position.x
+      const dify = y - position.y
+
+      const distance = difx*difx + dify*dify
+      console.log("distance " + distance)
+      if (distance > 80000) {
         channel.muted = true;
         $("#" + participant.sid).hide()
       } else {
