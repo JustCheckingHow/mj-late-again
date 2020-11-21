@@ -4,7 +4,7 @@
   "description": "Twilio Video SDK Quick Start for JavaScript",
   "main": "index.js",
   "scripts": {
-    "build": "npm-run-all build:*",
+    "build": "npm-run-all build:quickstart",
     "build:examples": "npm-run-all build:examples:*",
     "build:examples:bandwidthconstraints": "copyfiles -f examples/bandwidthconstraints/src/helpers.js examples/bandwidthconstraints/public && browserify examples/bandwidthconstraints/src/index.js > examples/bandwidthconstraints/public/index.js",
     "build:examples:codecpreferences": "copyfiles -f examples/codecpreferences/src/helpers.js examples/codecpreferences/public && browserify examples/codecpreferences/src/index.js > examples/codecpreferences/public/index.js",
@@ -34,7 +34,7 @@
     "clean:examples:remotereconnection": "rimraf examples/remotereconnection/public/index.js examples/remotereconnection/public/helpers.js",
     "clean:examples:datatracks": "rimraf examples/datatracks/public/index.js examples/datatracks/public/helpers.js",
     "clean:quickstart": "rimraf quickstart/public/index.js",
-    "start": "npm run clean && npm run build && node server"
+    "start": "npm run build && node server"
   },
   "repository": {
     "type": "git",
