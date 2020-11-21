@@ -1,4 +1,5 @@
 import React from 'react';
+import { VideoContext } from '../../components/VideoProvider';
 
 // import { styled } from '@material-ui/core/styles';
 
@@ -46,6 +47,20 @@ class Map extends React.Component {
 	    script2.src = "/script.js";
 	 	// script2.async = true;
   		document.head.appendChild(script2);
+
+
+  		var Video = require('twilio-video');
+
+		var localDataTrack = new Video.LocalDataTrack();
+		window.addEventListener('mousemove', function(event) {
+		  console.log(event)
+		  localDataTrack.send(JSON.stringify({
+		    x: event.clientX,
+		    y: event.clientY
+		  }));
+		});
+
+		window.twilioRoom.localParticipant.publishTrack(localDataTrack, {priority: 'high'})
 
 	}
 
