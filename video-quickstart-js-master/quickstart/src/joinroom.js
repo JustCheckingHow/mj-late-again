@@ -161,7 +161,8 @@ class Participant {
     var path = new paper.Path.Circle( new paper.Point(posX, posY), 40);
     var group = new paper.Group();
     // group.addChild(raster);
-    path.fillColor = "#FABAFA"
+    const color = stringToColor(identity)
+    path.fillColor = new paper.Color(color.r, color.g, color.b)
     group.addChild(path);
     group.view.draw();
     this.repr = group;
@@ -182,9 +183,9 @@ function setupCanvas() {
   $(window).keydown(function (e) { player.d[e.which] = true; });
   $(window).keyup(function (e) { player.d[e.which] = false; });
 
-  map.AddParticipant(new Participant(300, 300), "dupa1");
-  map.AddParticipant(new Participant(400, 150), "dupa2");
-  map.AddParticipant(new Participant(800, 600), "dupa3");
+  map.AddParticipant(new Participant(300, 300, "dupa1"));
+  map.AddParticipant(new Participant(400, 150, "dupa2"));
+  map.AddParticipant(new Participant(800, 600, "dupa3"));
 
   window.map = map;
 
@@ -251,7 +252,7 @@ function setupParticipantContainer(participant, room) {
   const { identity, sid } = participant;
 
   // Add a container for the Participant's media.
-  const $container = $(`<div class="participant" data-identity="${identity}" id="${sid}" style="outline: 4px solid ${userNameToColor(identity)}">
+  const $container = $(`<div class="participant" data-identity="${identity}" id="${sid}" style="outline: 4px solid ${RGBToString(stringToColor(identity))}">
     <audio autoplay ${participant === room.localParticipant ? 'muted' : ''} style="opacity: 0"></audio>
     <video autoplay muted playsinline style="opacity: 0"></video>
   </div>`);
@@ -411,7 +412,7 @@ function trackPublished(publication, participant) {
   });
 }
 
-function userNameToColor(user) {
+function stringToColor(user) {
 
   return HSLToRGB((xmur3(user)() % 100)/100, 0.7, 0.7)
 }
@@ -446,8 +447,14 @@ function HSLToRGB(h,s,v) {
       case 4: r = t, g = p, b = v; break;
       case 5: r = v, g = p, b = q; break;
   }
-  return "rgb(" + Math.round(r * 255) + "," + Math.round(g * 255) + "," + Math.round(b * 255) + ")";
+  return {r, g, b}
 }
+
+function RGBToString(color) {
+  return "rgb(" + Math.round(color.r * 255) + "," + Math.round(color.g * 255) + "," + Math.round(color.b * 255) + ")";
+}
+
+
 
 /**
  * Join a Room.
