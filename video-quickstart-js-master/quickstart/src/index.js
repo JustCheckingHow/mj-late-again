@@ -37,7 +37,7 @@ const connectOptions = {
   dominantSpeaker: true,
 
   // Comment this line to disable verbose logging.
-  logLevel: 'debug',
+  // logLevel: 'debug',
 
   // Comment this line if you are playing music.
   maxAudioBitrate: 16000,
@@ -106,14 +106,6 @@ async function selectAndJoinRoom(error = null) {
         name: 'chat',
     });
 
-    window.addEventListener('mousemove', function(e) {
-      localDataTrack.send(JSON.stringify({
-        x: e.clientX,
-        y: e.clientY
-      }));
-    });
-
-
     const mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: true
@@ -124,7 +116,7 @@ async function selectAndJoinRoom(error = null) {
     connectOptions.tracks = tracks
 
     // Join the Room.
-    await joinRoom(token, connectOptions);
+    await joinRoom(token, connectOptions,localDataTrack);
 
     // After the video session, display the room selection modal.
     return selectAndJoinRoom();
