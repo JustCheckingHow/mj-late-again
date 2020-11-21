@@ -439,7 +439,7 @@ function participantDisconnected(participant, room) {
   // Remove the Participant's media container.
   $(`div#${participant.sid}`, $participants).remove();
 
-  window.map.participants.get(participant.sid).Destroy()
+  window.map.participants.get(participant.identity).Destroy()
 
 }
 
