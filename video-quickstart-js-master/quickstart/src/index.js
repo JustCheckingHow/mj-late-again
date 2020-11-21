@@ -1,6 +1,6 @@
 'use strict';
 
-const { isSupported } = require('twilio-video');
+const { isSupported, LocalDataTrack } = require('twilio-video');
 
 const { isMobile } = require('./browser');
 const joinRoom = require('./joinroom');
@@ -100,6 +100,28 @@ async function selectAndJoinRoom(error = null) {
 
     // Add the specified video device ID to ConnectOptions.
     connectOptions.video.deviceId = { exact: deviceIds.video };
+
+
+    const localDataTrack = new LocalDataTrack({
+        name: 'chat',
+    });
+
+    window.addEventListener('mousemove', function(e) {
+      localDataTrack.send(JSON.stringify({
+        x: e.clientX,
+        y: e.clientY
+      }));
+    });
+
+
+    const mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true
+    })
+
+    var tracks = mediaStream.getTracks()
+    tracks.push(localDataTrack)
+    connectOptions.tracks = tracks
 
     // Join the Room.
     await joinRoom(token, connectOptions);

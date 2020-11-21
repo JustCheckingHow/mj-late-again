@@ -124,7 +124,15 @@ function attachTrack(track, participant) {
   // Attach the Participant's Track to the thumbnail.
   const $media = $(`div#${participant.sid} > ${track.kind}`, $participants);
   $media.css('opacity', '');
-  track.attach($media.get(0));
+
+  if (track.kind === 'data') {
+    track.on('message', function(message) {
+        console.log([participant.identity, message])
+    })
+  }else {
+      track.attach($media.get(0));
+  }
+
 
   // If the attached Track is a VideoTrack that is published by the active
   // Participant, then attach it to the main video as well.
@@ -132,9 +140,6 @@ function attachTrack(track, participant) {
     track.attach($activeVideo.get(0));
     $activeVideo.css('opacity', '');
   }
-  // if (track.kind === 'data') {
-  //   console.log(track.)
-  // }
 }
 
 /**
