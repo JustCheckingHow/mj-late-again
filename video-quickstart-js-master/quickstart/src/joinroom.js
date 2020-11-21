@@ -30,7 +30,7 @@ class Map {
   constructor(offset, w, draw_bbox) {
     this.offset = [50, 50];
     this.boundsOffset = [parseInt(offset), parseInt(offset)];
-    this.w = [parseInt(w), parseInt(w*2/3)];
+    this.w = [parseInt(w), parseInt(w * 2 / 3)];
     this.participants = [];
 
     this.body = new paper.Raster("img/floor.jpg");
@@ -56,10 +56,18 @@ class Map {
 
   AddParticipant(partip) {
     this.participants.push(partip);
+    this.body.sendToBack();
   }
 
   AddOffset(val, axis) {
     this.offset[axis] += val;
+  }
+
+  ReceiveUpdate(sid, posX, posY)
+  {
+    this.participants[0].globalPos[0] = posX;
+    this.participants[0].globalPos[1] = posY;
+    // console.log(posX);
   }
 
   Update() {
@@ -72,13 +80,14 @@ class Map {
 
 class Player {
   constructor(map, assigned_div) {
-    var raster = new paper.Raster("img/0.jpg");
-    raster.position = new paper.Point(300, 300);
-    raster.rescale(128, 128);
+    // var raster = new paper.Raster("img/0.jpg");
+    // raster.position = new paper.Point(300, 300);
+    // raster.rescale(128, 128);
 
     var path = new paper.Path.Rectangle(150, 150, 128, 128);
     var group = new paper.Group();
-    group.addChild(raster);
+    // group.addChild(raster);
+    path.fillColor = "#FAABDA";
     group.addChild(path);
     group.view.draw();
 
@@ -87,6 +96,9 @@ class Player {
 
     this.localX = 0;
     this.localY = 0;
+    this.globalX = 0;
+    this.globalY = 0;
+
     this.d = {};
     this.velocity = 10;
   }
@@ -123,21 +135,33 @@ class Player {
   Move() {
     this.AddVelocity(this.localX, 0);
     this.AddVelocity(this.localY, 1);
+    this.globalX = - this.map.offset[0] + this.localX;
+    this.globalY = - this.map.offset[1] + this.localY;
+
     this.repr.position = new paper.Point(this.localX, this.localY);
+
+    if (typeof window.localDataTrack != 'undefined') {
+      window.localDataTrack.send(JSON.stringify({
+        x: this.globalX,
+        y: this.globalY
+      }));
+    }
   }
 }
 
 class Participant {
   constructor(posX, posY) {
+    console.log("Create participant");
     this.globalPos = [posX, posY];
 
-    var raster = new paper.Raster("img/0.jpg");
-    raster.position = new paper.Point(posX, posY);
-    raster.rescale(128, 128);
+    // var raster = new paper.Raster("img/0.jpg");
+    // raster.position = new paper.Point(posX, posY);
+    // raster.rescale(128, 128);
 
     var path = new paper.Path.Rectangle(posX, posY, 128, 128);
     var group = new paper.Group();
-    group.addChild(raster);
+    // group.addChild(raster);
+    path.fillColor = "#FABAFA"
     group.addChild(path);
     group.view.draw();
     this.repr = group;
@@ -146,29 +170,32 @@ class Participant {
 
 // var w = (1800 - 128) / 3,
 //   offset = w / 3 * 2;
+function setupCanvas() {
+  var canvas = document.getElementById('canvas');
+  var w = (canvas.width - 128) * 2;
+  var offset = canvas.width;
 
-var canvas = document.getElementById('canvas');
-var w = (canvas.width - 128)*2;
-var offset = canvas.width;  
+  paper.setup(canvas);
+  map = new Map(offset, w, true);
+  player = new Player(map, "asdf");
 
-paper.setup(canvas);
-map = new Map(offset, w, true);
-player = new Player(map, "asdf");
+  $(window).keydown(function (e) { player.d[e.which] = true; });
+  $(window).keyup(function (e) { player.d[e.which] = false; });
 
-$(window).keydown(function (e) { player.d[e.which] = true; });
-$(window).keyup(function (e) { player.d[e.which] = false; });
+  map.AddParticipant(new Participant(300, 300));
+  map.AddParticipant(new Participant(400, 150));
+  map.AddParticipant(new Participant(800, 600));
 
-map.AddParticipant(new Participant(300, 300));
-map.AddParticipant(new Participant(400, 150));
-map.AddParticipant(new Participant(800, 600));
+  window.map = map;
 
-function onFrame(event) {
-  if (event.count % 2 == 0) {
-    map.Update();
-    player.Move();
+  function onFrame(event) {
+    if (event.count % 2 == 0) {
+      map.Update();
+      player.Move();
+    }
   }
+  paper.view.onFrame = onFrame;
 }
-paper.view.onFrame = onFrame;
 
 function setActiveParticipant(participant) {
   if (activeParticipant) {
@@ -277,19 +304,21 @@ function attachTrack(track, participant) {
   $media.css('opacity', '');
 
   if (track.kind === 'data') {
-    track.on('message', function(message) {
-        console.log([participant.identity, message])
-        const position = JSON.parse(message)
-        let localAudioTrack = Array.from(room.localParticipant.audioTracks.values())[0].track;
-        const $media = $(`div#${participant.sid} > ${localAudioTrack.kind}`, $participants);
-        const channel = $media.get(0);
-        if (position.x < 400) {
-          channel.muted = true;
-          $("#" + participant.sid).hide() 
-        }else {
-          channel.muted = false;
-          $("#" + participant.sid).show()
-        }
+    track.on('message', function (message) {
+      console.log([participant.identity, message])
+      const position = JSON.parse(message)
+      let localAudioTrack = Array.from(room.localParticipant.audioTracks.values())[0].track;
+      const $media = $(`div#${participant.sid} > ${localAudioTrack.kind}`, $participants);
+      const channel = $media.get(0);
+      if (position.x < 400) {
+        channel.muted = true;
+        $("#" + participant.sid).hide()
+      } else {
+        channel.muted = false;
+        $("#" + participant.sid).show()
+      }
+
+      map.ReceiveUpdate(participant.sid, position.x, position.y);
     })
   } else {
     track.attach($media.get(0));
@@ -427,17 +456,20 @@ function HSLToRGB(h,s,v) {
  */
 async function joinRoom(token, connectOptions, localDataTrack) {
   // Join to the Room with the given AccessToken and ConnectOptions.
+  window.localDataTrack = localDataTrack;
+  setupCanvas();
+
   const room = await connect(token, connectOptions);
 
   // Save the LocalVideoTrack.
   let localVideoTrack = Array.from(room.localParticipant.videoTracks.values())[0].track;
 
-  window.addEventListener('mousemove', function(e) {
-    localDataTrack.send(JSON.stringify({
-      x: e.clientX,
-      y: e.clientY
-    }));
-  });
+  // window.addEventListener('mousemove', function(e) {
+  //   localDataTrack.send(JSON.stringify({
+  //     x: e.clientX,
+  //     y: e.clientY
+  //   }));
+  // });
 
   // Make the Room available in the JavaScript console for debugging.
   window.room = room;
