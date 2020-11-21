@@ -20,6 +20,156 @@ let isActiveParticipantPinned = false;
  * Set the active Participant's video.
  * @param participant - the active Participant
  */
+paper.Raster.prototype.rescale = function (width, height) {
+  this.scale(width / this.width, height / this.height);
+};
+
+let player, map, bounds;
+
+class Map {
+  constructor(offset, w, draw_bbox) {
+    this.offset = [50, 50];
+    this.boundsOffset = [parseInt(offset), parseInt(offset)];
+    this.w = [parseInt(w), parseInt(w*2/3)];
+    this.participants = [];
+
+    this.body = new paper.Raster("img/floor.jpg");
+    this.body.position = new paper.Point(this.offset[0], this.offset[1]);
+    this.body.view.draw();
+
+    // if (draw_bbox) {
+    // bounds = new paper.Path.Rectangle(this.boundsOffset, this.boundsOffset, this.w[0], this.w[1]);
+    // bounds.fillColor = "#00eeff";
+    // bounds.view.draw();
+    // }
+  }
+
+  GetBounds(off, axis) {
+    if (off < this.boundsOffset[axis]) {
+      return this.boundsOffset[axis];
+    }
+    if (off > this.w[axis] + this.boundsOffset[axis])
+      return this.w[axis] + this.boundsOffset[axis];
+
+    return off;
+  }
+
+  AddParticipant(partip) {
+    this.participants.push(partip);
+  }
+
+  AddOffset(val, axis) {
+    this.offset[axis] += val;
+  }
+
+  Update() {
+    this.participants.forEach(function (partip) {
+      partip.repr.position = new paper.Point(map.offset[0] + partip.globalPos[0], map.offset[1] + partip.globalPos[1])
+    });
+    this.body.position = new paper.Point(this.offset[0], this.offset[1]);
+  }
+}
+
+class Player {
+  constructor(map, assigned_div) {
+    var raster = new paper.Raster("img/0.jpg");
+    raster.position = new paper.Point(300, 300);
+    raster.rescale(128, 128);
+
+    var path = new paper.Path.Rectangle(150, 150, 128, 128);
+    var group = new paper.Group();
+    group.addChild(raster);
+    group.addChild(path);
+    group.view.draw();
+
+    this.repr = group;
+    this.map = map;
+
+    this.localX = 0;
+    this.localY = 0;
+    this.d = {};
+    this.velocity = 10;
+  }
+
+  newv(n, a, b) {
+    if (this.d[a])
+      n -= this.velocity;
+    if (this.d[b])
+      n += this.velocity;
+
+    return n
+  }
+
+  AddVelocity(val, dir) {
+    val = parseInt(val, 10);
+    if (dir == 0) {
+      var off = this.newv(val, 37, 39);
+      var newX = this.map.GetBounds(off, dir);
+      if (newX == val)
+        this.map.AddOffset(val - off, 0);
+
+      this.localX = newX;
+    }
+    if (dir == 1) {
+      var off = this.newv(val, 38, 40);
+      var newY = this.map.GetBounds(off, dir);
+      if (newY == val)
+        this.map.AddOffset(val - off, 1);
+
+      this.localY = newY;
+    }
+  }
+
+  Move() {
+    this.AddVelocity(this.localX, 0);
+    this.AddVelocity(this.localY, 1);
+    this.repr.position = new paper.Point(this.localX, this.localY);
+  }
+}
+
+class Participant {
+  constructor(posX, posY) {
+    this.globalPos = [posX, posY];
+
+    var raster = new paper.Raster("img/0.jpg");
+    raster.position = new paper.Point(posX, posY);
+    raster.rescale(128, 128);
+
+    var path = new paper.Path.Rectangle(posX, posY, 128, 128);
+    var group = new paper.Group();
+    group.addChild(raster);
+    group.addChild(path);
+    group.view.draw();
+    this.repr = group;
+  }
+}
+
+// var w = (1800 - 128) / 3,
+//   offset = w / 3 * 2;
+
+var canvas = document.getElementById('canvas');
+var w = (canvas.width - 128)*2;
+var offset = canvas.width;  
+
+paper.setup(canvas);
+map = new Map(offset, w, true);
+player = new Player(map, "asdf");
+
+$(window).keydown(function (e) { player.d[e.which] = true; });
+$(window).keyup(function (e) { player.d[e.which] = false; });
+
+map.AddParticipant(new Participant(300, 300));
+map.AddParticipant(new Participant(400, 150));
+map.AddParticipant(new Participant(800, 600));
+
+function onFrame(event) {
+  if (event.count % 2 == 0) {
+    map.Update();
+    player.Move();
+  }
+}
+paper.view.onFrame = onFrame;
+
 function setActiveParticipant(participant) {
   if (activeParticipant) {
     const $activeParticipant = $(`div#${activeParticipant.sid}`, $participants);
@@ -60,8 +210,9 @@ function setActiveParticipant(participant) {
  * @param room - the Room which contains the current active Participant
  */
 function setCurrentActiveParticipant(room) {
-  const { localParticipant } = room;
-  setActiveParticipant(localParticipant);
+  // const { dominantSpeaker, localParticipant } = room;
+  // setActiveParticipant(dominantSpeaker || localParticipant);
+
 }
 
 /**
@@ -140,8 +291,8 @@ function attachTrack(track, participant) {
           $("#" + participant.sid).show()
         }
     })
-  }else {
-      track.attach($media.get(0));
+  } else {
+    track.attach($media.get(0));
   }
 
 
@@ -274,13 +425,13 @@ async function joinRoom(token, connectOptions, localDataTrack) {
   // Set the current active Participant.
   setCurrentActiveParticipant(room);
 
-  // Update the active Participant when changed, only if the user has not
-  // pinned any particular Participant as the active Participant.
-  room.on('dominantSpeakerChanged', () => {
-    if (!isActiveParticipantPinned) {
-      setCurrentActiveParticipant(room);
-    }
-  });
+  // // Update the active Participant when changed, only if the user has not
+  // // pinned any particular Participant as the active Participant.
+  // room.on('dominantSpeakerChanged', () => {
+  //   if (!isActiveParticipantPinned) {
+  //     setCurrentActiveParticipant(room);
+  //   }
+  // });
 
   // Leave the Room when the "Leave Room" button is clicked.
   $leave.click(function onLeave() {

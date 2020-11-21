@@ -4,6 +4,8 @@
     <title>Twilio Video QuickStart</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <link rel="stylesheet" href="index.css" />
+    <script src="paper-full.js"></script>
+
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous" />
   </head>
   <body>
@@ -29,7 +31,9 @@
         <div id="participants" class="col-xs-12 col-sm-3 col-md-2" style="text-align: center"></div>
         <div id="active-participant" class="col-xs-12 col-sm-9 col-md-10" style="text-align: center">
           <div class="participant main">
-            <video autoplay playsinline muted></video>
+            <!-- <video autoplay playsinline muted></video> -->
+            <canvas id="canvas" class="map" resize>
+            </canvas>
           </div>
         </div>
       </div>

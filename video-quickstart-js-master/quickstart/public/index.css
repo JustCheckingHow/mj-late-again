@@ -4,6 +4,8 @@ html {
 
 body {
   height: 100%;
+  overflow-x:hidden;
+  overflow-y:hidden;
 }
 
 div.container-fluid {
@@ -12,6 +14,11 @@ div.container-fluid {
 
 div#participants {
   overflow-y: auto;
+}
+
+canvas[resize] {
+  width: 100%;
+  height: 100%;
 }
 
 div.participant {
