@@ -49,7 +49,7 @@ class BoardMap {
   }
 
   AddParticipant(name) {
-    if (typeof name != "undefined") {
+    if (name != room.localParticipant.identity) {
       var partip = new Participant(50, 50, name);
       this.participants.set(name, partip);
       this.body.sendToBack();
@@ -139,12 +139,10 @@ class Player {
     this.repr.position = new paper.Point(this.localX, this.localY);
 
     // if (tick % 10 == 0) {
-    if (typeof window.localDataTrack != 'undefined') {
-      window.localDataTrack.send(JSON.stringify({
-        x: this.globalX,
-        y: this.globalY
-      }));
-    }
+    window.localDataTrack.send(JSON.stringify({
+      x: this.globalX,
+      y: this.globalY
+    }));
     // }
   }
 }
@@ -165,7 +163,7 @@ class Participant {
     group.addChild(path);
     group.addChild(identityText);
     group.view.draw();
-    
+
     this.repr = group;
   }
 }
