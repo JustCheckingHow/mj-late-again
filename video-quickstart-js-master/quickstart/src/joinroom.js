@@ -135,8 +135,8 @@ class Player {
   Move() {
     this.AddVelocity(this.localX, 0);
     this.AddVelocity(this.localY, 1);
-    this.globalX = this.map.offset[0] + this.localX;
-    this.globalY = this.map.offset[1] + this.localY;
+    this.globalX = - this.map.offset[0] + this.localX;
+    this.globalY = - this.map.offset[1] + this.localY;
 
     this.repr.position = new paper.Point(this.localX, this.localY);
 
