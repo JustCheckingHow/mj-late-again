@@ -26,22 +26,16 @@ paper.Raster.prototype.rescale = function (width, height) {
 
 let player, map, bounds;
 
-class Map {
+class BoardMap {
   constructor(offset, w, draw_bbox) {
     this.offset = [50, 50];
     this.boundsOffset = [parseInt(offset), parseInt(offset)];
     this.w = [parseInt(w), parseInt(w * 2 / 3)];
-    this.participants = [];
+    this.participants = new Map();
 
     this.body = new paper.Raster("img/blueprint-paper.jpg");
     this.body.position = new paper.Point(this.offset[0], this.offset[1]);
     this.body.view.draw();
-
-    // if (draw_bbox) {
-    // bounds = new paper.Path.Rectangle(this.boundsOffset, this.boundsOffset, this.w[0], this.w[1]);
-    // bounds.fillColor = "#00eeff";
-    // bounds.view.draw();
-    // }
   }
 
   GetBounds(off, axis) {
@@ -54,41 +48,44 @@ class Map {
     return off;
   }
 
-  AddParticipant(partip) {
-    this.participants.push(partip);
-    this.body.sendToBack();
+  AddParticipant(name) {
+    if (typeof name != "undefined") {
+      var partip = new Participant(50, 50, name);
+      this.participants.set(name, partip);
+      this.body.sendToBack();
+    }
   }
 
   AddOffset(val, axis) {
     this.offset[axis] += val;
   }
 
-  ReceiveUpdate(sid, posX, posY)
-  {
-    this.participants[0].globalPos[0] = posX;
-    this.participants[0].globalPos[1] = posY;
-    // console.log(posX);
+  ReceiveUpdate(name, posX, posY) {
+    this.participants.get(name).globalPos[0] = posX;
+    this.participants.get(name).globalPos[1] = posY;
   }
 
   Update() {
-    this.participants.forEach(function (partip) {
-      partip.repr.position = new paper.Point(map.offset[0] + partip.globalPos[0], map.offset[1] + partip.globalPos[1])
-    });
+    for (var [key, value] of this.participants) {
+      value.repr.position = new paper.Point(map.offset[0] + value.globalPos[0], map.offset[1] + value.globalPos[1]);
+    }
     this.body.position = new paper.Point(this.offset[0], this.offset[1]);
   }
 }
 
 class Player {
   constructor(map, identity) {
-    // var raster = new paper.Raster("img/0.jpg");
-    // raster.position = new paper.Point(300, 300);
-    // raster.rescale(128, 128);
+    this.identity = identity;
 
-    var path = new paper.Path.Circle( new paper.Point(150, 150), 40);
     var group = new paper.Group();
-    // group.addChild(raster);
+    var identityText = new paper.PointText();
+    identityText.content = identity;
+
+    var path = new paper.Path.Circle(new paper.Point(150, 150), 40);
     const color = stringToColor(identity)
     path.fillColor = new paper.Color(color.r, color.g, color.b)
+
+    group.addChild(identityText);
     group.addChild(path);
     group.view.draw();
 
@@ -133,7 +130,7 @@ class Player {
     }
   }
 
-  Move() {
+  Move(tick) {
     this.AddVelocity(this.localX, 0);
     this.AddVelocity(this.localY, 1);
     this.globalX = - this.map.offset[0] + this.localX;
@@ -141,31 +138,34 @@ class Player {
 
     this.repr.position = new paper.Point(this.localX, this.localY);
 
+    // if (tick % 10 == 0) {
     if (typeof window.localDataTrack != 'undefined') {
       window.localDataTrack.send(JSON.stringify({
         x: this.globalX,
         y: this.globalY
       }));
     }
+    // }
   }
 }
 
 class Participant {
-  constructor(posX, posY, identity) {
-    console.log("Create participant");
+  constructor(posX, posY, name) {
+    console.log("Create participant: " + name);
     this.globalPos = [posX, posY];
+    this.name = name;
 
-    // var raster = new paper.Raster("img/0.jpg");
-    // raster.position = new paper.Point(posX, posY);
-    // raster.rescale(128, 128);
+    var identityText = new paper.PointText();
+    identityText.content = name;
 
-    var path = new paper.Path.Circle( new paper.Point(posX, posY), 40);
+    var path = new paper.Path.Circle(new paper.Point(posX, posY), 40);
     var group = new paper.Group();
-    // group.addChild(raster);
-    const color = stringToColor(identity)
+    const color = stringToColor(name)
     path.fillColor = new paper.Color(color.r, color.g, color.b)
     group.addChild(path);
+    group.addChild(identityText);
     group.view.draw();
+    
     this.repr = group;
   }
 }
@@ -178,21 +178,21 @@ function setupCanvas(room) {
   var offset = canvas.width;
 
   paper.setup(canvas);
-  map = new Map(offset, w, true);
+  map = new BoardMap(offset, w, true);
   player = new Player(map, room.localParticipant.identity);
 
   $(window).keydown(function (e) { player.d[e.which] = true; });
   $(window).keyup(function (e) { player.d[e.which] = false; });
 
-  map.AddParticipant(new Participant(300, 300, "dupa1"));
-  map.AddParticipant(new Participant(400, 150, "dupa2"));
-  map.AddParticipant(new Participant(800, 600, "dupa3"));
+  // map.AddParticipant(new Participant(300, 300));
+  // map.AddParticipant(new Participant(400, 150));
+  // map.AddParticipant(new Participant(800, 600));
 
   window.map = map;
 
   function onFrame(event) {
     if (event.count % 2 == 0) {
-      map.Update();
+      map.Update(event.count);
       player.Move();
     }
   }
@@ -278,6 +278,7 @@ function setupParticipantContainer(participant, room) {
 
   // Add the Participant's container to the DOM.
   $participants.append($container);
+
 }
 
 /**
@@ -320,7 +321,7 @@ function attachTrack(track, participant) {
         $("#" + participant.sid).show()
       }
 
-      map.ReceiveUpdate(participant.sid, position.x, position.y);
+      map.ReceiveUpdate(participant.identity, position.x, position.y);
     })
   } else {
     track.attach($media.get(0));
@@ -372,6 +373,8 @@ function participantConnected(participant, room) {
   participant.on('trackPublished', publication => {
     trackPublished(publication, participant);
   });
+
+  map.AddParticipant(participant.identity);
 }
 
 /**
@@ -415,25 +418,25 @@ function trackPublished(publication, participant) {
 
 function stringToColor(user) {
 
-  return HSLToRGB((xmur3(user)() % 100)/100, 0.7, 0.7)
+  return HSLToRGB((xmur3(user)() % 100) / 100, 0.7, 0.7)
 }
 function xmur3(str) {
-    for(var i = 0, h = 1779033703 ^ str.length; i < str.length; i++)
-        h = Math.imul(h ^ str.charCodeAt(i), 3432918353),
-        h = h << 13 | h >>> 19;
-    return function() {
-        h = Math.imul(h ^ h >>> 16, 2246822507);
-        h = Math.imul(h ^ h >>> 13, 3266489909);
-        return (h ^= h >>> 16) >>> 0;
-    }
+  for (var i = 0, h = 1779033703 ^ str.length; i < str.length; i++)
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353),
+      h = h << 13 | h >>> 19;
+  return function () {
+    h = Math.imul(h ^ h >>> 16, 2246822507);
+    h = Math.imul(h ^ h >>> 13, 3266489909);
+    return (h ^= h >>> 16) >>> 0;
+  }
 }
 
 
-function HSLToRGB(h,s,v) {
+function HSLToRGB(h, s, v) {
 
   var r, g, b, i, f, p, q, t;
   if (arguments.length === 1) {
-      s = h.s, v = h.v, h = h.h;
+    s = h.s, v = h.v, h = h.h;
   }
   i = Math.floor(h * 6);
   f = h * 6 - i;
@@ -441,14 +444,14 @@ function HSLToRGB(h,s,v) {
   q = v * (1 - f * s);
   t = v * (1 - (1 - f) * s);
   switch (i % 6) {
-      case 0: r = v, g = t, b = p; break;
-      case 1: r = q, g = v, b = p; break;
-      case 2: r = p, g = v, b = t; break;
-      case 3: r = p, g = q, b = v; break;
-      case 4: r = t, g = p, b = v; break;
-      case 5: r = v, g = p, b = q; break;
+    case 0: r = v, g = t, b = p; break;
+    case 1: r = q, g = v, b = p; break;
+    case 2: r = p, g = v, b = t; break;
+    case 3: r = p, g = q, b = v; break;
+    case 4: r = t, g = p, b = v; break;
+    case 5: r = v, g = p, b = q; break;
   }
-  return {r, g, b}
+  return { r, g, b }
 }
 
 function RGBToString(color) {
