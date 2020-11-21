@@ -150,7 +150,7 @@ class Player {
 }
 
 class Participant {
-  constructor(posX, posY) {
+  constructor(posX, posY, identity) {
     console.log("Create participant");
     this.globalPos = [posX, posY];
 
@@ -158,7 +158,7 @@ class Participant {
     // raster.position = new paper.Point(posX, posY);
     // raster.rescale(128, 128);
 
-    var path = new paper.Path.Rectangle(posX, posY, 128, 128);
+    var path = new paper.Path.Circle( new paper.Point(posX, posY), 40);
     var group = new paper.Group();
     // group.addChild(raster);
     path.fillColor = "#FABAFA"
@@ -182,9 +182,9 @@ function setupCanvas() {
   $(window).keydown(function (e) { player.d[e.which] = true; });
   $(window).keyup(function (e) { player.d[e.which] = false; });
 
-  map.AddParticipant(new Participant(300, 300));
-  map.AddParticipant(new Participant(400, 150));
-  map.AddParticipant(new Participant(800, 600));
+  map.AddParticipant(new Participant(300, 300), "dupa1");
+  map.AddParticipant(new Participant(400, 150), "dupa2");
+  map.AddParticipant(new Participant(800, 600), "dupa3");
 
   window.map = map;
 
