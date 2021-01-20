@@ -1,12 +1,71 @@
+class BoundingBoxManager {
+    constructor(canvasWidth, canvasHeight, drawBBox) {
+        this.drawBBox = drawBBox;
+        this.canvasWidth = canvasWidth;
+        this.canvasHeight = canvasHeight;
+
+        var aspect = canvasWidth / canvasHeight
+        this.offsetStart = [50, 50 / aspect];
+        this.sizeStart = [this.canvasWidth / 2, this.canvasHeight / 2];
+
+        this.offset = [...this.offsetStart];
+        this.size = [...this.sizeStart];
+
+        if (this.drawBBox)
+            this.DrawBBox();
+    }
+
+    DrawBBox() {
+        this.bounds = new paper.Shape.Rectangle(this.offset[0], this.offset[1], this.size[0], this.size[1]);
+        this.bounds.fillColor = "#00eeff";
+        this.bounds.view.draw();
+    }
+
+    Rescale(x, y) {
+        var factX = x / this.canvasWidth;
+        var factY = y / this.canvasHeight;
+        console.log(this.offset, this.offsetStart);
+        console.log(this.size, this.sizeStart);
+
+        this.offset[0] = this.offsetStart[0] * factX;
+        this.offset[1] = this.offsetStart[1] * factY;
+
+        this.size[0] = this.sizeStart[0] * factX;
+        this.size[1] = this.sizeStart[1] * factY;
+
+        if (this.drawBBox) {
+            this.bounds.size = [...this.size];
+            this.bounds.position = [this.offset[0] * 2, this.offset[1] * 2];
+
+            this.bounds.view.draw();
+        }
+    }
+
+    GetBounds(off, axis) {
+        // if(axis==0){
+        //     console.log("X-offset: ", off, this.offset[1] + this.size[1]);
+        //     console.log(off > this.offset[1] + this.size[1]);
+        // }
+        // Left or upper bound
+        if (off < this.offset[axis]) {
+            return this.offset[axis];
+        }
+
+        // Right or lower bound
+        if (off > this.size[axis] + this.offset[axis]){
+            // console.log("lol");
+            return this.size[axis] + this.offset[axis];
+        }
+
+        return off;
+    }
+}
+
 class BoardMap {
     constructor(offset, w, draw_bbox) {
-        this.draw_bbox = draw_bbox;
-        this.offset = [50, 50];
-        this.boundsOffset = [parseInt(offset) * 3 / 2, parseInt(offset)];
-        // this.w = [parseInt(w), parseInt(w * 2 / 3)];
-        this.w_start = w;
+        this.bboxManager = new BoundingBoxManager(w[0], w[1], true);
 
-        this.w = w;
+        this.offset = [50, 50];
 
         this.participants = new Map();
 
@@ -18,37 +77,19 @@ class BoardMap {
 
         console.log(canvas.width);
 
-        if (draw_bbox) {
-            this.bounds = new paper.Path.Rectangle(this.boundsOffset[0], this.boundsOffset[1], this.w[0], this.w[1]);
-            this.bounds.fillColor = "#00eeff";
-            this.bounds.view.draw();
-        }
-
         this.spawnLocation = [-100, -100];
     }
 
     Rescale(x, y) {
         console.log("Rescaling!");
-        this.w[0] = this.w_start[0] * x;
-        this.w[1] = this.w_start[1] * y;
-        console.log(this.w);
         console.log(x);
+        console.log(y);
 
-        if (this.draw_bbox) {
-            this.bounds = new paper.Path.Rectangle(this.boundsOffset[0], this.boundsOffset[1], this.w[0], this.w[1]);
-            this.bounds.fillColor = "#00eeff";
-            this.bounds.view.draw();
-        }
+        this.bboxManager.Rescale(x, y);
     }
 
     GetBounds(off, axis) {
-        if (off < this.boundsOffset[axis]) {
-            return this.boundsOffset[axis];
-        }
-        if (off > this.w[axis] + this.boundsOffset[axis])
-            return this.w[axis] + this.boundsOffset[axis];
-
-        return off;
+        return this.bboxManager.GetBounds(off, axis);
     }
 
     AddParticipant(name) {
@@ -60,6 +101,7 @@ class BoardMap {
     }
 
     AddOffset(val, axis) {
+        console.log("Offset: ", val, axis);
         this.offset[axis] += val;
     }
 
@@ -116,6 +158,11 @@ class Participant {
 }
 
 class Player {
+    KEY_UP = 38
+    KEY_DOWN = 40
+    KEY_LEFT = 37
+    KEY_RIGHT = 39
+
     constructor(map, identity) {
         this.identity = identity;
 
@@ -166,29 +213,40 @@ class Player {
         return n
     }
 
-    AddVelocity(val, dir) {
-        val = parseInt(val, 10);
-        if (dir == 0) {
-            var off = this.newv(val, 37, 39);
-            var newX = this.map.GetBounds(off, dir);
-            if (newX == val)
-                this.map.AddOffset(val - off, 0);
+    // Add velocity if user presses a key
+    AddVelocity() {
+        var currentPosX = Math.floor(this.localX, 10);
+        var currentPosY = Math.floor(this.localY, 10);
 
-            this.localX = newX;
-        }
-        if (dir == 1) {
-            var off = this.newv(val, 38, 40);
-            var newY = this.map.GetBounds(off, dir);
-            if (newY == val)
-                this.map.AddOffset(val - off, 1);
+        var toCheck = [this.KEY_DOWN, this.KEY_UP, this.KEY_LEFT, this.KEY_RIGHT];
+        var axis = [1, 1, 0, 0];
+        var sign = [1, -1, -1, 1];
+        var movement = [0, 0];
 
-            this.localY = newY;
+        for(var i=0; i<4; i++){
+            var button = toCheck[i];
+            var ax = axis[i];
+            
+            if(this.d[button])
+                movement[ax] += sign[i]*this.velocity;            
         }
+        console.log(movement);
+
+        var newX = Math.floor(this.map.GetBounds(this.localX + movement[0], 0));
+        var newY = Math.floor(this.map.GetBounds(this.localY + movement[1], 1));
+
+        if(newX == currentPosX) {
+            this.map.AddOffset(-movement[0], 0);
+        }
+        if(newY == currentPosY)
+            this.map.AddOffset(-movement[1], 1);
+
+        this.localX = newX;
+        this.localY = newY;
     }
 
     Move(tick) {
-        this.AddVelocity(this.localX, 0);
-        this.AddVelocity(this.localY, 1);
+        this.AddVelocity();
         this.globalX = - this.map.offset[0] + this.localX;
         this.globalY = - this.map.offset[1] + this.localY;
 

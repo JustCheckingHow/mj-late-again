@@ -23,20 +23,30 @@ let isActiveParticipantPinned = false;
  */
 let player, map, bounds;
 
-paper.Raster.prototype.rescale = function (width, height) {
-  // this.scale(width / this.width, height / this.height);
+// paper.Raster.prototype.rescale = function () {
+//   // this.scale(width / this.width, height / this.height);
+//   var canvas = document.getElementById('canvas');
+//   var width = canvas.width;
+//   var height = canvas.height;
+
+//   map.Rescale(width, height);
+// };
+
+window.onresize = function () {
+  var canvas = document.getElementById('canvas');
+  var width = canvas.width;
+  var height = canvas.height;
+
   map.Rescale(width, height);
 };
-
-window.onresize = paper.Raster.prototype.rescale;
 
 // var w = (1800 - 128) / 3,
 //   offset = w / 3 * 2;
 function setupCanvas(room) {
   var canvas = document.getElementById('canvas');
   var w = (canvas.width - 128) * 2;
-  var center_w = canvas.width / 2;
-  var center_h = canvas.height / 2;
+  var center_w = canvas.width;
+  var center_h = canvas.height;
 
   var offset = canvas.width;
 
@@ -363,6 +373,7 @@ async function joinRoom(token, connectOptions, localDataTrack) {
     $leave.off('click', onLeave);
     room.disconnect();
   });
+  window.onresize();
 
   return new Promise((resolve, reject) => {
     // Leave the Room when the "beforeunload" event is fired.
@@ -430,6 +441,7 @@ async function joinRoom(token, connectOptions, localDataTrack) {
       }
     });
   });
+
 }
 
 module.exports = joinRoom;
