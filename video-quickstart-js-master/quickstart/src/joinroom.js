@@ -2,6 +2,7 @@
 
 const { connect, createLocalVideoTrack } = require('twilio-video');
 const { isMobile } = require('./browser');
+const { Player, Participant, stringToColor, BoardMap } = require('./map.js');
 
 const $leave = $('#leave-room');
 const $room = $('#room');
@@ -20,206 +21,33 @@ let isActiveParticipantPinned = false;
  * Set the active Participant's video.
  * @param participant - the active Participant
  */
-paper.Raster.prototype.rescale = function (width, height) {
-  this.scale(width / this.width, height / this.height);
-};
-
 let player, map, bounds;
 
-class BoardMap {
-  constructor(offset, w, draw_bbox) {
-    this.offset = [50, 50];
-    this.boundsOffset = [parseInt(offset)*3/2, parseInt(offset)];
-    this.w = [parseInt(w), parseInt(w * 2 / 3)];
-    this.participants = new Map();
+paper.Raster.prototype.rescale = function (width, height) {
+  // this.scale(width / this.width, height / this.height);
+  map.Rescale(width, height);
+};
 
-    this.body = new paper.Raster("img/blueprint-paper.jpg");
-    this.body.position = new paper.Point(this.offset[0], this.offset[1]);
-    this.body.view.draw();
-
-    this.spawnLocation = [-100, -100];
-  }
-
-  GetBounds(off, axis) {
-    if (off < this.boundsOffset[axis]) {
-      return this.boundsOffset[axis];
-    }
-    if (off > this.w[axis] + this.boundsOffset[axis])
-      return this.w[axis] + this.boundsOffset[axis];
-
-    return off;
-  }
-
-  AddParticipant(name) {
-    if (name != room.localParticipant.identity) {
-      var partip = new Participant(this.spawnLocation[0], this.spawnLocation[1], name);
-      this.participants.set(name, partip);
-      this.body.sendToBack();
-    }
-  }
-
-  AddOffset(val, axis) {
-    this.offset[axis] += val;
-  }
-
-  ReceiveUpdate(name, posX, posY) {
-    this.participants.get(name).globalPos[0] = posX;
-    this.participants.get(name).globalPos[1] = posY;
-  }
-
-  Update() {
-    for (var [key, value] of this.participants) {
-      value.repr.position = new paper.Point(map.offset[0] + value.globalPos[0], map.offset[1] + value.globalPos[1]);
-    }
-    this.body.position = new paper.Point(this.offset[0], this.offset[1]);
-  }
-}
-
-class Player {
-  constructor(map, identity) {
-    this.identity = identity;
-
-    const color = stringToColor(identity)
-    
-    var group = new paper.Group();
-    var path = new paper.Path.Circle(new paper.Point(0, 0), 40);
-    path.strokeColor = 'black';
-    path.strokeWidth = 5;
-    path.fillColor = new paper.Color(color.r, color.g, color.b)
-    
-    var identityText = new paper.PointText(0, 80);
-    identityText.content = identity;
-    identityText.style = {
-      fontWeight: 'bold',
-      fontSize: 20,
-      fillColor: '#F2F2F2',
-      justification: 'center',
-    }
-    var rect = new paper.Path.Rectangle(identityText.bounds);
-    rect.fillColor = 'black';
-    rect.fillColor.alpha = 0.6;
-    identityText.insertAbove(rect);
-
-    group.addChild(rect);
-    group.addChild(path);
-    group.addChild(identityText);
-    group.view.draw();
-
-    this.repr = group;
-    this.map = map;
-
-    this.localX = 0;
-    this.localY = 0;
-    this.globalX = this.map.spawnLocation[0];
-    this.globalY = this.map.spawnLocation[1];
-
-    this.d = {};
-    this.velocity = 10;
-  }
-
-  newv(n, a, b) {
-    if (this.d[a])
-      n -= this.velocity;
-    if (this.d[b])
-      n += this.velocity;
-
-    return n
-  }
-
-  AddVelocity(val, dir) {
-    val = parseInt(val, 10);
-    if (dir == 0) {
-      var off = this.newv(val, 37, 39);
-      var newX = this.map.GetBounds(off, dir);
-      if (newX == val)
-        this.map.AddOffset(val - off, 0);
-
-      this.localX = newX;
-    }
-    if (dir == 1) {
-      var off = this.newv(val, 38, 40);
-      var newY = this.map.GetBounds(off, dir);
-      if (newY == val)
-        this.map.AddOffset(val - off, 1);
-
-      this.localY = newY;
-    }
-  }
-
-  Move(tick) {
-    this.AddVelocity(this.localX, 0);
-    this.AddVelocity(this.localY, 1);
-    this.globalX = - this.map.offset[0] + this.localX;
-    this.globalY = - this.map.offset[1] + this.localY;
-
-    this.repr.position = new paper.Point(this.localX, this.localY);
-
-    // if (tick % 10 == 0) {
-    if (typeof window.localDataTrack != 'undefined') {
-      window.localDataTrack.send(JSON.stringify({
-        x: this.globalX,
-        y: this.globalY
-      }));
-    }
-    // }
-  }
-}
-
-class Participant {
-  constructor(posX, posY, name) {
-    console.log("Create participant: " + name);
-    this.globalPos = [posX, posY];
-    this.name = name;
-
-    var group = new paper.Group();
-
-    var identityText = new paper.PointText(0, 80);
-    identityText.content = name;
-    identityText.style = {
-      fontWeight: 'bold',
-      fontSize: 20,
-      fillColor: '#F2F2F2',
-      justification: 'center',
-    }
-    var rect = new paper.Path.Rectangle(identityText.bounds);
-    rect.fillColor = 'black';
-    rect.fillColor.alpha = 0.6;
-    identityText.insertAbove(rect);
-
-    var path = new paper.Path.Circle(new paper.Point(0, 0), 40);
-    const color = stringToColor(name)
-    path.fillColor = new paper.Color(color.r, color.g, color.b);
-    path.strokeColor = 'black';
-    path.strokeWidth = 5;
-
-    group.addChild(path);
-    group.addChild(rect);
-    group.addChild(identityText);
-    group.view.draw();
-    
-    this.repr = group;
-  }
-  Destroy() {
-    this.repr.remove();
-
-  }
-}
+window.onresize = paper.Raster.prototype.rescale;
 
 // var w = (1800 - 128) / 3,
 //   offset = w / 3 * 2;
 function setupCanvas(room) {
   var canvas = document.getElementById('canvas');
   var w = (canvas.width - 128) * 2;
+  var center_w = canvas.width / 2;
+  var center_h = canvas.height / 2;
+
   var offset = canvas.width;
 
   paper.setup(canvas);
-  map = new BoardMap(offset, w, true);
+  map = new BoardMap(offset, [center_w, center_h], true);
   player = new Player(map, room.localParticipant.identity);
 
   $(window).keydown(function (e) { player.d[e.which] = true; });
   $(window).keyup(function (e) { player.d[e.which] = false; });
 
-  // map.AddParticipant(new Participant(300, 300));
+  map.AddParticipant("Name");
   // map.AddParticipant(new Participant(400, 150));
   // map.AddParticipant(new Participant(800, 600));
 
@@ -229,6 +57,7 @@ function setupCanvas(room) {
   function onFrame(event) {
     if (event.count % 2 == 0) {
       map.Update(event.count);
+      // map.Rescale(canvas.width, canvas.height);
       player.Move();
     }
   }
@@ -357,7 +186,7 @@ function attachTrack(track, participant) {
       const difx = x - position.x
       const dify = y - position.y
 
-      const distance = difx*difx + dify*dify
+      const distance = difx * difx + dify * dify
       console.log("distance " + distance)
       if (distance > 80000) {
         channel.muted = true;
@@ -465,43 +294,9 @@ function trackPublished(publication, participant) {
   });
 }
 
-function stringToColor(user) {
-
-  return HSLToRGB((xmur3(user)() % 100) / 100, 0.7, 0.7)
-}
-function xmur3(str) {
-  for (var i = 0, h = 1779033703 ^ str.length; i < str.length; i++)
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353),
-      h = h << 13 | h >>> 19;
-  return function () {
-    h = Math.imul(h ^ h >>> 16, 2246822507);
-    h = Math.imul(h ^ h >>> 13, 3266489909);
-    return (h ^= h >>> 16) >>> 0;
-  }
-}
 
 
-function HSLToRGB(h, s, v) {
 
-  var r, g, b, i, f, p, q, t;
-  if (arguments.length === 1) {
-    s = h.s, v = h.v, h = h.h;
-  }
-  i = Math.floor(h * 6);
-  f = h * 6 - i;
-  p = v * (1 - s);
-  q = v * (1 - f * s);
-  t = v * (1 - (1 - f) * s);
-  switch (i % 6) {
-    case 0: r = v, g = t, b = p; break;
-    case 1: r = q, g = v, b = p; break;
-    case 2: r = p, g = v, b = t; break;
-    case 3: r = p, g = q, b = v; break;
-    case 4: r = t, g = p, b = v; break;
-    case 5: r = v, g = p, b = q; break;
-  }
-  return { r, g, b }
-}
 
 function RGBToString(color) {
   return "rgb(" + Math.round(color.r * 255) + "," + Math.round(color.g * 255) + "," + Math.round(color.b * 255) + ")";
